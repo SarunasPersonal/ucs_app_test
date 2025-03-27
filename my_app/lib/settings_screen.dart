@@ -148,19 +148,14 @@ class SettingsScreen extends StatelessWidget {
                         subtitle: const Text(
                           'Increases contrast for better visibility'
                         ),
-                        value: false, // Initial value - to be replaced with actual state
+                        value: themeProvider.isHighContrast, // Initial value - to be replaced with actual state
                         onChanged: (value) {
                           // Show coming soon message until fully implemented
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Coming soon in a future update'),
-                            ),
-                          );
-                          
-                          // When implemented, use this:
-                          // themeProvider.setHighContrast(value);
+                          themeProvider.toggleHighContrast();
                         },
-                        activeColor: primaryColor,
+                        activeColor: primaryColor
+                        
+                        
                       ),
                       
                       const Divider(),
@@ -177,17 +172,9 @@ class SettingsScreen extends StatelessWidget {
                           ],
                         ),
                         subtitle: const Text('Makes text bolder and easier to read'),
-                        value: false, // Initial value - to be replaced with actual state
+                        value: themeProvider.isBoldText,
                         onChanged: (value) {
-                          // Show coming soon message until fully implemented
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Coming soon in a future update'),
-                            ),
-                          );
-                          
-                          // When implemented, use this:
-                          // themeProvider.setBoldText(value);
+                          themeProvider.toggleBoldText();
                         },
                         activeColor: primaryColor,
                       ),

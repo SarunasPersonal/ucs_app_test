@@ -376,13 +376,14 @@ class _TypingIndicatorState extends State<_TypingIndicator> with SingleTickerPro
   }
   
   Widget _buildDot(int index) {
-    final delay = index * 0.33;
+    final double delay = (index * 0.33).clamp(0.0, 0.5);  // Clamp delay to valid range
+    final double end = (delay + 0.5).clamp(0.0, 1.0);     // Ensure end is valid and ≤ 1.0
     final animation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Interval(delay, delay + 0.5, curve: Curves.easeOut),
-      ),
-    );
+  CurvedAnimation(
+    parent: _controller,
+    curve: Interval(delay, end, curve: Curves.easeOut),
+  ),
+);
     
     return Transform.translate(
       offset: Offset(0, -3 * animation.value),
