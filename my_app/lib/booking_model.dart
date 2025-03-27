@@ -18,65 +18,27 @@ class Booking {
 
 // Enum for room types
 enum RoomType {
-  quietRoom,
-  conferenceRoom,
-  studyRoom;
+  quietRoom('Quiet Room', Icons.volume_off),
+  conferenceRoom('Conference Room', Icons.groups),
+  studyRoom('Study Room', Icons.menu_book);
 
-  String get displayName {
-    switch (this) {
-      case RoomType.quietRoom:
-        return 'Quiet Room';
-      case RoomType.conferenceRoom:
-        return 'Conference Room';
-      case RoomType.studyRoom:
-        return 'Study Room';
-    }
-  }
-
-  IconData get icon {
-    switch (this) {
-      case RoomType.quietRoom:
-        return Icons.volume_off;
-      case RoomType.conferenceRoom:
-        return Icons.groups;
-      case RoomType.studyRoom:
-        return Icons.menu_book;
-    }
-  }
+  final String displayName;
+  final IconData icon;
+  
+  const RoomType(this.displayName, this.icon);
 }
 
-// Enum for room features (expandable)
+// Enum for room features
 enum RoomFeature {
-  projector,
-  whiteboard,
-  videoConferencing,
-  computerEquipment;
+  projector('Projector', Icons.video_file),
+  whiteboard('Whiteboard', Icons.edit_square),
+  videoConferencing('Video Conferencing', Icons.video_call),
+  computerEquipment('Computer Equipment', Icons.computer);
 
-  String get displayName {
-    switch (this) {
-      case RoomFeature.projector:
-        return 'Projector';
-      case RoomFeature.whiteboard:
-        return 'Whiteboard';
-      case RoomFeature.videoConferencing:
-        return 'Video Conferencing';
-      case RoomFeature.computerEquipment:
-        return 'Computer Equipment';
-    }
-  }
-
-  IconData get icon {
-    switch (this) {
-      case RoomFeature.projector:
-        return Icons.video_file;
-      case RoomFeature.whiteboard:
-        return Icons.edit_square;
-      case RoomFeature.videoConferencing:
-        return Icons.video_call;
-      case RoomFeature.computerEquipment:
-        return Icons.computer;
-    }
-  }
+  final String displayName;
+  final IconData icon;
+  
+  const RoomFeature(this.displayName, this.icon);
 }
 
 // Simple in-memory storage for bookings

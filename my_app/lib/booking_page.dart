@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 
 class BookingPage extends StatefulWidget {
   final String location;
-
   const BookingPage(this.location, {super.key});
 
   @override
@@ -21,10 +20,7 @@ class _BookingPageState extends State<BookingPage> {
   // Room selection
   RoomType _selectedRoomType = RoomType.quietRoom;
   final Map<RoomFeature, bool> _selectedFeatures = {
-    RoomFeature.projector: false,
-    RoomFeature.whiteboard: false,
-    RoomFeature.videoConferencing: false,
-    RoomFeature.computerEquipment: false,
+    for (var feature in RoomFeature.values) feature: false
   };
 
   // Focus nodes for improved keyboard navigation
@@ -35,10 +31,17 @@ class _BookingPageState extends State<BookingPage> {
 
   @override
   void dispose() {
-    _roomTypeFocusNode.dispose();
-    _featuresFocusNode.dispose();
-    _dateTimeFocusNode.dispose();
-    _confirmButtonFocusNode.dispose();
+   final nodes = [
+      _roomTypeFocusNode, 
+      _featuresFocusNode, 
+      _dateTimeFocusNode, 
+      _confirmButtonFocusNode
+    ];
+    
+    for (final node in nodes) {
+      node.dispose();
+    }
+    
     super.dispose();
   }
 
@@ -48,78 +51,50 @@ class _BookingPageState extends State<BookingPage> {
       initialDate: DateTime.now(),
       firstDate: DateTime.now(),
       lastDate: DateTime(2026),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: primaryColor,
-              onPrimary: secondaryColor,
-              onSurface: primaryColor,
-            ),
-          ),
-          // Wrap DatePicker with Semantics for screen readers
-          child: Semantics(
-            label: 'Date picker for booking',
-            hint: 'Select a date for your booking',
-            child: child!,
-          ),
-        );
-      },
+      builder: (context, child) => _buildDateTimePickerTheme(context, child, 'Date picker for booking'),
     );
 
-    // Check if the provided context is still mounted
-    if (!context.mounted) return;
+    if (!context.mounted || pickedDate == null) return;
 
-    if (pickedDate != null) {
-      final TimeOfDay? pickedTime = await showTimePicker(
-        context: context,
-        initialTime: TimeOfDay.now(),
-        builder: (context, child) {
-          return Theme(
-            data: Theme.of(context).copyWith(
-              colorScheme: const ColorScheme.light(
-                primary: primaryColor,
-                onPrimary: secondaryColor,
-                onSurface: primaryColor,
-              ),
-            ),
-            // Wrap TimePicker with Semantics for screen readers
-            child: Semantics(
-              label: 'Time picker for booking',
-              hint: 'Select a time for your booking',
-              child: child!,
-            ),
-          );
-        },
-      );
+    final TimeOfDay? pickedTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+      builder: (context, child) => _buildDateTimePickerTheme(context, child, 'Time picker for booking'),
+    );
 
-      // Check again if context is still mounted after second async operation
-      if (!context.mounted) return;
+    if (!context.mounted || pickedTime == null) return;
 
-      if (pickedTime != null) {
-        final newDateTime = DateTime(
-          pickedDate.year,
-          pickedDate.month,
-          pickedDate.day,
-          pickedTime.hour,
-          pickedTime.minute,
-        );
-        
-        setState(() {
-          selectedDateTime = newDateTime;
-          formattedDateTime = _formatDateTime(newDateTime);
-        });
-        
-        // Announce the selected date and time for screen reader users
-        ScaffoldMessenger.of(context).clearSnackBars();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Selected date and time: $formattedDateTime'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    }
+    final newDateTime = DateTime(
+      pickedDate.year,
+      pickedDate.month,
+      pickedDate.day,
+      pickedTime.hour,
+      pickedTime.minute,
+    );
+    
+    setState(() {
+      selectedDateTime = newDateTime;
+      formattedDateTime = _formatDateTime(newDateTime);
+    });
+    
+    _showSnackBar('Selected date and time: $formattedDateTime');
+  }
+
+  Widget _buildDateTimePickerTheme(BuildContext context, Widget? child, String label) {
+    return Theme(
+      data: Theme.of(context).copyWith(
+        colorScheme: const ColorScheme.light(
+          primary: primaryColor,
+          onPrimary: secondaryColor,
+          onSurface: primaryColor,
+        ),
+      ),
+      child: Semantics(
+        label: label,
+        hint: 'Select a ${label.contains('Date') ? 'date' : 'time'} for your booking',
+        child: child!,
+      ),
+    );
   }
 
   String _formatDateTime(DateTime dateTime) {
@@ -130,17 +105,11 @@ class _BookingPageState extends State<BookingPage> {
 
   void _showConfirmationDialog() {
     if (selectedDateTime == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a date and time')),
-      );
+      _showSnackBar('Please select a date and time');
       return;
     }
 
-    // Get list of selected features
-    final List<RoomFeature> features = _selectedFeatures.entries
-        .where((entry) => entry.value)
-        .map((entry) => entry.key)
-        .toList();
+    final List<RoomFeature> features = _getSelectedFeatures();
 
     showDialog(
       context: context,
@@ -159,89 +128,87 @@ class _BookingPageState extends State<BookingPage> {
                       style: const TextStyle(color: Colors.black, fontSize: 16),
                       children: [
                         const TextSpan(text: 'Are you sure you want to book a '),
-                        TextSpan(
-                          text: _selectedRoomType.displayName,
-                          style: const TextStyle(fontWeight: FontWeight.bold, color: primaryColor),
-                        ),
+                        _highlightText(_selectedRoomType.displayName),
                         const TextSpan(text: ' at '),
-                        TextSpan(
-                          text: widget.location,
-                          style: const TextStyle(fontWeight: FontWeight.bold, color: primaryColor),
-                        ),
+                        _highlightText(widget.location),
                         const TextSpan(text: ' for '),
-                        TextSpan(
-                          text: formattedDateTime,
-                          style: const TextStyle(fontWeight: FontWeight.bold, color: primaryColor),
-                        ),
+                        _highlightText(formattedDateTime ?? ''),
                         const TextSpan(text: '?'),
                       ],
                     ),
                   ),
                   
-                  if (features.isNotEmpty) ...[
-                    const SizedBox(height: 16),
-                    const Text(
-                      'With the following features:',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 8),
-                    ...features.map((feature) => Padding(
-                      padding: const EdgeInsets.only(top: 4.0),
-                      child: Semantics(
-                        label: feature.displayName,
-                        child: Row(
-                          children: [
-                            Icon(feature.icon, size: 16, color: primaryColor),
-                            const SizedBox(width: 8),
-                            Text(feature.displayName),
-                          ],
-                        ),
-                      ),
-                    )),
-                  ],
+                  if (features.isNotEmpty) ..._buildFeaturesList(features),
                 ],
               ),
             ),
           ),
           actions: [
-            Semantics(
-              button: true,
-              label: 'Cancel button',
-              child: TextButton(
-                onPressed: () {
-                  Navigator.of(dialogContext).pop();
-                },
-                child: const Text('CANCEL', style: TextStyle(color: Colors.grey)),
-              ),
-            ),
-            Semantics(
-              button: true,
-              label: 'Confirm button',
-              child: TextButton(
-                onPressed: () {
-                  Navigator.of(dialogContext).pop();
-                  _confirmBooking();
-                },
-                child: const Text('CONFIRM', style: TextStyle(color: primaryColor)),
-              ),
-            ),
+            _buildDialogButton('Cancel', () => Navigator.of(dialogContext).pop(), Colors.grey),
+            _buildDialogButton('Confirm', () {
+              Navigator.of(dialogContext).pop();
+              _confirmBooking();
+            }, primaryColor),
           ],
         );
       },
     );
   }
 
+  TextSpan _highlightText(String text) {
+    return TextSpan(
+      text: text,
+      style: const TextStyle(fontWeight: FontWeight.bold, color: primaryColor),
+    );
+  }
+
+  List<Widget> _buildFeaturesList(List<RoomFeature> features) {
+    return [
+      const SizedBox(height: 16),
+      const Text(
+        'With the following features:',
+        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      ),
+      const SizedBox(height: 8),
+      ...features.map((feature) => Padding(
+        padding: const EdgeInsets.only(top: 4.0),
+        child: Semantics(
+          label: feature.displayName,
+          child: Row(
+            children: [
+              Icon(feature.icon, size: 16, color: primaryColor),
+              const SizedBox(width: 8),
+              Text(feature.displayName),
+            ],
+          ),
+        ),
+      )),
+    ];
+  }
+
+  Widget _buildDialogButton(String label, VoidCallback onPressed, Color color) {
+    return Semantics(
+      button: true,
+      label: '$label button',
+      child: TextButton(
+        onPressed: onPressed,
+        child: Text(label, style: TextStyle(color: color)),
+      ),
+    );
+  }
+
+  List<RoomFeature> _getSelectedFeatures() {
+    return _selectedFeatures.entries
+        .where((entry) => entry.value)
+        .map((entry) => entry.key)
+        .toList();
+  }
+
   void _confirmBooking() async {
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     try {
-      // Get list of selected features
-      final List<RoomFeature> features = _selectedFeatures.entries
-          .where((entry) => entry.value)
-          .map((entry) => entry.key)
-          .toList();
+      final List<RoomFeature> features = _getSelectedFeatures();
           
       // Create a new booking
       final newBooking = Booking(
@@ -254,42 +221,39 @@ class _BookingPageState extends State<BookingPage> {
       
       _bookingService.addBooking(newBooking);
       
-      // Check if state is still mounted before using its context
       if (!mounted) return;
       
-      // Show confirmation message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${_selectedRoomType.displayName} booking confirmed at ${widget.location} on $formattedDateTime'),
-          duration: const Duration(seconds: 4),
-          backgroundColor: Colors.green,
-        ),
+      _showSnackBar(
+        '${_selectedRoomType.displayName} booking confirmed at ${widget.location} on $formattedDateTime',
+        color: Colors.green,
+        duration: const Duration(seconds: 4),
       );
       
-      // Navigate back to the home page after successful booking
+      // Navigate back after successful booking
       Future.delayed(const Duration(seconds: 2), () {
-        // Check again if state is still mounted
         if (!mounted) return;
         Navigator.pop(context);
       });
     } catch (e) {
-      // Check if state is still mounted before showing error
       if (!mounted) return;
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showSnackBar('Error: ${e.toString()}', color: Colors.red);
     } finally {
-      // Check mounted state before calling setState
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
       }
     }
+  }
+
+  void _showSnackBar(String message, {Color color = Colors.black, Duration? duration}) {
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: color != Colors.black ? color : null,
+        duration: duration ?? const Duration(seconds: 2),
+      ),
+    );
   }
 
   void _showHelpDialog() {
@@ -331,9 +295,7 @@ class _BookingPageState extends State<BookingPage> {
               label: 'Close help dialog',
               child: TextButton(
                 child: const Text('CLOSE'),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
+                onPressed: () => Navigator.of(context).pop(),
               ),
             ),
           ],
@@ -353,6 +315,28 @@ class _BookingPageState extends State<BookingPage> {
         ],
       ),
     );
+  }
+
+  void _resetFeatures() {
+    _selectedFeatures.forEach((key, _) => _selectedFeatures[key] = false);
+  }
+  
+  IconData _getIconForLocation(String location) {
+    switch (location) {
+      case 'Taunton': return Icons.school;
+      case 'Bridgwater': return Icons.account_balance;
+      case 'Cannington': return Icons.park;
+      default: return Icons.location_on;
+    }
+  }
+  
+  String _getAddressForLocation(String location) {
+    switch (location) {
+      case 'Taunton': return 'Wellington Road, Taunton, TA1 5AX';
+      case 'Bridgwater': return 'Bath Road, Bridgwater, TA6 4PZ';
+      case 'Cannington': return 'Rodway, Cannington, Bridgwater, TA5 2LS';
+      default: return '';
+    }
   }
 
   @override
@@ -375,7 +359,6 @@ class _BookingPageState extends State<BookingPage> {
           style: const TextStyle(color: primaryColor),
         ),
         actions: [
-          // Help button for screen reader users
           Semantics(
             button: true,
             label: 'Help button',
@@ -393,508 +376,292 @@ class _BookingPageState extends State<BookingPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Campus image placeholder
-              Semantics(
-                label: '${widget.location} Campus image',
-                child: Container(
-                  height: 200,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: primaryColor.withAlpha(26),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Center(
-                    child: ExcludeSemantics( // Exclude decorative icon from screen reader
-                      child: Icon(
-                        _getIconForLocation(widget.location),
-                        color: primaryColor,
-                        size: 80,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Semantics(
-                label: 'Location',
-                child: Text(
-                  '${widget.location} Campus',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: primaryColor,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Semantics(
-                label: 'Address',
-                child: Text(
-                  _getAddressForLocation(widget.location),
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey,
-                  ),
-                ),
-              ),
-              
+              _buildLocationHeader(),
               const SizedBox(height: 30),
               
               // Room Type Selection
-              Semantics(
-                header: true,
-                label: 'Room Type Selection Section',
-                child: const Text(
-                  'Select Room Type',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: primaryColor,
-                  ),
-                ),
-              ),
+              _buildSectionHeader('Select Room Type'),
               const SizedBox(height: 15),
               
-              Focus(
-                focusNode: _roomTypeFocusNode,
-                child: Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    children: [
-                      RadioListTile<RoomType>(
-                        title: Semantics(
-                          label: 'Quiet Room option',
-                          child: Row(
-                            children: [
-                              Icon(RoomType.quietRoom.icon, color: primaryColor),
-                              const SizedBox(width: 10),
-                              Text(RoomType.quietRoom.displayName),
-                            ],
-                          ),
-                        ),
-                        subtitle: const Text('Individual space for focused work'),
-                        value: RoomType.quietRoom,
-                        groupValue: _selectedRoomType,
-                        activeColor: primaryColor,
-                        onChanged: (RoomType? value) {
-                          if (value != null) {
-                            setState(() {
-                              _selectedRoomType = value;
-                              // Clear features when switching to quiet room
-                              if (value == RoomType.quietRoom) {
-                                _resetFeatures();
-                              }
-                            });
-                            
-                            // Announce selection for screen readers
-                            ScaffoldMessenger.of(context).clearSnackBars();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Selected ${value.displayName}'),
-                                behavior: SnackBarBehavior.floating,
-                                duration: const Duration(seconds: 1),
-                              ),
-                            );
-                          }
-                        },
-                      ),
-                      
-                      RadioListTile<RoomType>(
-                        title: Semantics(
-                          label: 'Conference Room option',
-                          child: Row(
-                            children: [
-                              Icon(RoomType.conferenceRoom.icon, color: primaryColor),
-                              const SizedBox(width: 10),
-                              Text(RoomType.conferenceRoom.displayName),
-                            ],
-                          ),
-                        ),
-                        subtitle: const Text('Meeting space for groups'),
-                        value: RoomType.conferenceRoom,
-                        groupValue: _selectedRoomType,
-                        activeColor: primaryColor,
-                        onChanged: (RoomType? value) {
-                          if (value != null) {
-                            setState(() {
-                              _selectedRoomType = value;
-                            });
-                            
-                            // Announce selection for screen readers
-                            ScaffoldMessenger.of(context).clearSnackBars();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Selected ${value.displayName}'),
-                                behavior: SnackBarBehavior.floating,
-                                duration: const Duration(seconds: 1),
-                              ),
-                            );
-                          }
-                        },
-                      ),
-                      
-                      RadioListTile<RoomType>(
-                        title: Semantics(
-                          label: 'Study Room option',
-                          child: Row(
-                            children: [
-                              Icon(RoomType.studyRoom.icon, color: primaryColor),
-                              const SizedBox(width: 10),
-                              Text(RoomType.studyRoom.displayName),
-                            ],
-                          ),
-                        ),
-                        subtitle: const Text('Collaborative space for study groups'),
-                        value: RoomType.studyRoom,
-                        groupValue: _selectedRoomType,
-                        activeColor: primaryColor,
-                        onChanged: (RoomType? value) {
-                          if (value != null) {
-                            setState(() {
-                              _selectedRoomType = value;
-                            });
-                            
-                            // Announce selection for screen readers
-                            ScaffoldMessenger.of(context).clearSnackBars();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Selected ${value.displayName}'),
-                                behavior: SnackBarBehavior.floating,
-                                duration: const Duration(seconds: 1),
-                              ),
-                            );
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              _buildRoomTypeSelector(),
               
               // Room Features (only visible for conference and study rooms)
-              if (_selectedRoomType != RoomType.quietRoom) ...[
-                const SizedBox(height: 25),
-                Semantics(
-                  header: true,
-                  label: 'Room Features Section',
-                  child: const Text(
-                    'Room Features',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: primaryColor,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                
-                Focus(
-                  focusNode: _featuresFocusNode,
-                  child: Card(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      children: [
-                        CheckboxListTile(
-                          title: Semantics(
-                            label: 'Projector feature',
-                            child: Row(
-                              children: [
-                                Icon(RoomFeature.projector.icon, color: primaryColor),
-                                const SizedBox(width: 10),
-                                Text(RoomFeature.projector.displayName),
-                              ],
-                            ),
-                          ),
-                          value: _selectedFeatures[RoomFeature.projector],
-                          activeColor: primaryColor,
-                          onChanged: (bool? value) {
-                            if (value != null) {
-                              setState(() {
-                                _selectedFeatures[RoomFeature.projector] = value;
-                              });
-                              
-                              // Announce change for screen readers
-                              ScaffoldMessenger.of(context).clearSnackBars();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(value 
-                                    ? 'Added Projector' 
-                                    : 'Removed Projector'),
-                                  behavior: SnackBarBehavior.floating,
-                                  duration: const Duration(seconds: 1),
-                                ),
-                              );
-                            }
-                          },
-                        ),
-                        
-                        CheckboxListTile(
-                          title: Semantics(
-                            label: 'Whiteboard feature',
-                            child: Row(
-                              children: [
-                                Icon(RoomFeature.whiteboard.icon, color: primaryColor),
-                                const SizedBox(width: 10),
-                                Text(RoomFeature.whiteboard.displayName),
-                              ],
-                            ),
-                          ),
-                          value: _selectedFeatures[RoomFeature.whiteboard],
-                          activeColor: primaryColor,
-                          onChanged: (bool? value) {
-                            if (value != null) {
-                              setState(() {
-                                _selectedFeatures[RoomFeature.whiteboard] = value;
-                              });
-                              
-                              // Announce change for screen readers
-                              ScaffoldMessenger.of(context).clearSnackBars();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(value 
-                                    ? 'Added Whiteboard' 
-                                    : 'Removed Whiteboard'),
-                                  behavior: SnackBarBehavior.floating,
-                                  duration: const Duration(seconds: 1),
-                                ),
-                              );
-                            }
-                          },
-                        ),
-                        
-                        CheckboxListTile(
-                          title: Semantics(
-                            label: 'Video conferencing feature',
-                            child: Row(
-                              children: [
-                                Icon(RoomFeature.videoConferencing.icon, color: primaryColor),
-                                const SizedBox(width: 10),
-                                Text(RoomFeature.videoConferencing.displayName),
-                              ],
-                            ),
-                          ),
-                          value: _selectedFeatures[RoomFeature.videoConferencing],
-                          activeColor: primaryColor,
-                          onChanged: (bool? value) {
-                            if (value != null) {
-                              setState(() {
-                                _selectedFeatures[RoomFeature.videoConferencing] = value;
-                              });
-                              
-                              // Announce change for screen readers
-                              ScaffoldMessenger.of(context).clearSnackBars();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(value 
-                                    ? 'Added Video Conferencing' 
-                                    : 'Removed Video Conferencing'),
-                                  behavior: SnackBarBehavior.floating,
-                                  duration: const Duration(seconds: 1),
-                                ),
-                              );
-                            }
-                          },
-                        ),
-                        
-                        CheckboxListTile(
-                          title: Semantics(
-                            label: 'Computer equipment feature',
-                            child: Row(
-                              children: [
-                                Icon(RoomFeature.computerEquipment.icon, color: primaryColor),
-                                const SizedBox(width: 10),
-                                Text(RoomFeature.computerEquipment.displayName),
-                              ],
-                            ),
-                          ),
-                          value: _selectedFeatures[RoomFeature.computerEquipment],
-                          activeColor: primaryColor,
-                          onChanged: (bool? value) {
-                            if (value != null) {
-                              setState(() {
-                                _selectedFeatures[RoomFeature.computerEquipment] = value;
-                              });
-                              
-                              // Announce change for screen readers
-                              ScaffoldMessenger.of(context).clearSnackBars();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(value 
-                                    ? 'Added Computer Equipment' 
-                                    : 'Removed Computer Equipment'),
-                                  behavior: SnackBarBehavior.floating,
-                                  duration: const Duration(seconds: 1),
-                                ),
-                              );
-                            }
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+              if (_selectedRoomType != RoomType.quietRoom) _buildRoomFeatures(),
               
               const SizedBox(height: 30),
-              Semantics(
-                header: true,
-                label: 'Date and Time Selection Section',
-                child: const Text(
-                  'Select Date & Time',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: primaryColor,
-                  ),
-                ),
-              ),
+              _buildSectionHeader('Select Date & Time'),
               const SizedBox(height: 10),
+              
               const Text(
                 'Please select a date and time for your appointment:',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey,
-                ),
+                style: TextStyle(fontSize: 16, color: Colors.grey),
               ),
               const SizedBox(height: 20),
-              Focus(
-                focusNode: _dateTimeFocusNode,
-                child: Semantics(
-                  button: true,
-                  label: 'Select date and time button',
-                  hint: 'Tap to open date and time pickers',
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.calendar_today, color: secondaryColor),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryColor,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    ),
-                    onPressed: () => _selectDateTime(context),
-                    label: Text(
-                      selectedDateTime == null ? 'Select Date & Time' : 'Change Date & Time',
-                      style: const TextStyle(color: secondaryColor),
-                    ),
-                  ),
-                ),
-              ),
-              if (selectedDateTime != null) ...[
-                const SizedBox(height: 30),
-                Semantics(
-                  header: true,
-                  label: 'Selected Date and Time Section',
-                  child: const Text(
-                    'Selected Date & Time',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: primaryColor,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Semantics(
-                  label: 'Currently selected date and time',
-                  value: formattedDateTime,
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: primaryColor.withAlpha(26),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: primaryColor.withAlpha(128)),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.event_available, color: primaryColor),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            formattedDateTime!,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              color: primaryColor,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+              _buildDateTimeSelector(),
+              
+              if (selectedDateTime != null) _buildSelectedDateTime(),
+              
               const SizedBox(height: 40),
-              Focus(
-                focusNode: _confirmButtonFocusNode,
-                child: Semantics(
-                  button: true,
-                  label: 'Confirm booking button',
-                  hint: 'Tap to review and confirm your booking details',
-                  enabled: !_isLoading,
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.check_circle, color: secondaryColor),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryColor,
-                      minimumSize: const Size(double.infinity, 50),
-                    ),
-                    onPressed: _isLoading ? null : _showConfirmationDialog,
-                    label: _isLoading
-                        ? SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              color: secondaryColor,
-                              strokeWidth: 2,
-                              semanticsLabel: 'Loading indicator',
-                            ),
-                          )
-                        : const Text(
-                            'Confirm Booking',
-                            style: TextStyle(
-                              color: secondaryColor,
-                              fontSize: 16,
-                            ),
-                          ),
-                  ),
-                ),
-              ),
+              _buildConfirmButton(),
             ],
           ),
         ),
       ),
     );
   }
-  
-  void _resetFeatures() {
-    _selectedFeatures.forEach((key, value) {
-      _selectedFeatures[key] = false;
-    });
+
+  Widget _buildLocationHeader() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Campus image placeholder
+        Semantics(
+          label: '${widget.location} Campus image',
+          child: Container(
+            height: 200,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: primaryColor.withAlpha(26),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Center(
+              child: ExcludeSemantics(
+                child: Icon(
+                  _getIconForLocation(widget.location),
+                  color: primaryColor,
+                  size: 80,
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        Semantics(
+          label: 'Location',
+          child: Text(
+            '${widget.location} Campus',
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: primaryColor,
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Semantics(
+          label: 'Address',
+          child: Text(
+            _getAddressForLocation(widget.location),
+            style: const TextStyle(fontSize: 16, color: Colors.grey),
+          ),
+        ),
+      ],
+    );
   }
-  
-  IconData _getIconForLocation(String location) {
-    switch (location) {
-      case 'Taunton':
-        return Icons.school;
-      case 'Bridgwater':
-        return Icons.account_balance;
-      case 'Cannington':
-        return Icons.park;
-      default:
-        return Icons.location_on;
-    }
+
+  Widget _buildSectionHeader(String title) {
+    return Semantics(
+      header: true,
+      label: '$title Section',
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: primaryColor,
+        ),
+      ),
+    );
   }
-  
-  String _getAddressForLocation(String location) {
-    switch (location) {
-      case 'Taunton':
-        return 'Wellington Road, Taunton, TA1 5AX';
-      case 'Bridgwater':
-        return 'Bath Road, Bridgwater, TA6 4PZ';
-      case 'Cannington':
-        return 'Rodway, Cannington, Bridgwater, TA5 2LS';
-      default:
-        return '';
-    }
+
+  Widget _buildRoomTypeSelector() {
+    return Focus(
+      focusNode: _roomTypeFocusNode,
+      child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Column(
+          children: RoomType.values.map((type) => _buildRoomTypeOption(type)).toList(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRoomTypeOption(RoomType type) {
+    final String subtitle = type == RoomType.quietRoom 
+        ? 'Individual space for focused work'
+        : type == RoomType.conferenceRoom 
+            ? 'Meeting space for groups' 
+            : 'Collaborative space for study groups';
+    
+    return RadioListTile<RoomType>(
+      title: Semantics(
+        label: '${type.displayName} option',
+        child: Row(
+          children: [
+            Icon(type.icon, color: primaryColor),
+            const SizedBox(width: 10),
+            Text(type.displayName),
+          ],
+        ),
+      ),
+      subtitle: Text(subtitle),
+      value: type,
+      groupValue: _selectedRoomType,
+      activeColor: primaryColor,
+      onChanged: (RoomType? value) {
+        if (value != null) {
+          setState(() {
+            _selectedRoomType = value;
+            if (value == RoomType.quietRoom) {
+              _resetFeatures();
+            }
+          });
+          
+          _showSnackBar('Selected ${value.displayName}', duration: const Duration(seconds: 1));
+        }
+      },
+    );
+  }
+
+  Widget _buildRoomFeatures() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 25),
+        _buildSectionHeader('Room Features'),
+        const SizedBox(height: 10),
+        
+        Focus(
+          focusNode: _featuresFocusNode,
+          child: Card(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            child: Column(
+              children: RoomFeature.values.map((feature) => _buildFeatureOption(feature)).toList(),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFeatureOption(RoomFeature feature) {
+    return CheckboxListTile(
+      title: Semantics(
+        label: '${feature.displayName} feature',
+        child: Row(
+          children: [
+            Icon(feature.icon, color: primaryColor),
+            const SizedBox(width: 10),
+            Text(feature.displayName),
+          ],
+        ),
+      ),
+      value: _selectedFeatures[feature],
+      activeColor: primaryColor,
+      onChanged: (bool? value) {
+        if (value != null) {
+          setState(() {
+            _selectedFeatures[feature] = value;
+          });
+          
+          _showSnackBar(
+            value ? 'Added ${feature.displayName}' : 'Removed ${feature.displayName}',
+            duration: const Duration(seconds: 1),
+          );
+        }
+      },
+    );
+  }
+
+  Widget _buildDateTimeSelector() {
+    return Focus(
+      focusNode: _dateTimeFocusNode,
+      child: Semantics(
+        button: true,
+        label: 'Select date and time button',
+        hint: 'Tap to open date and time pickers',
+        child: ElevatedButton.icon(
+          icon: const Icon(Icons.calendar_today, color: secondaryColor),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: primaryColor,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          ),
+          onPressed: () => _selectDateTime(context),
+          label: Text(
+            selectedDateTime == null ? 'Select Date & Time' : 'Change Date & Time',
+            style: const TextStyle(color: secondaryColor),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSelectedDateTime() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 30),
+        _buildSectionHeader('Selected Date & Time'),
+        const SizedBox(height: 10),
+        Semantics(
+          label: 'Currently selected date and time',
+          value: formattedDateTime,
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: primaryColor.withAlpha(26),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: primaryColor.withAlpha(128)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.event_available, color: primaryColor),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    formattedDateTime!,
+                    style: const TextStyle(fontSize: 16, color: primaryColor),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildConfirmButton() {
+    return Focus(
+      focusNode: _confirmButtonFocusNode,
+      child: Semantics(
+        button: true,
+        label: 'Confirm booking button',
+        hint: 'Tap to review and confirm your booking details',
+        enabled: !_isLoading,
+        child: ElevatedButton.icon(
+          icon: const Icon(Icons.check_circle, color: secondaryColor),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: primaryColor,
+            minimumSize: const Size(double.infinity, 50),
+          ),
+          onPressed: _isLoading ? null : _showConfirmationDialog,
+          label: _isLoading
+              ? SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    color: secondaryColor,
+                    strokeWidth: 2,
+                    semanticsLabel: 'Loading indicator',
+                  ),
+                )
+              : const Text(
+                  'Confirm Booking',
+                  style: TextStyle(color: secondaryColor, fontSize: 16),
+                ),
+        ),
+      ),
+    );
   }
 }

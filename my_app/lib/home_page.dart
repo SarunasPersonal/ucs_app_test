@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_ucs_app/constants.dart';
 import 'package:flutter_ucs_app/booking_page.dart';
 import 'package:flutter_ucs_app/login_screen.dart';
-import 'package:flutter_ucs_app/my_bookings_page.dart' as my_bookings;
+import 'package:flutter_ucs_app/my_bookings_page.dart';
 import 'package:flutter_ucs_app/settings_screen.dart';
 import 'package:flutter_ucs_app/theme_provider.dart';
-import 'package:flutter_ucs_app/chat_bot_screen.dart'; // Import the ChatBot screen
+import 'package:flutter_ucs_app/chat_bot_screen.dart';
 import 'package:provider/provider.dart';
 
 class HomePage extends StatelessWidget {
@@ -37,9 +37,7 @@ class HomePage extends StatelessWidget {
           
           IconButton(
             icon: const Icon(Icons.menu, color: primaryColor),
-            onPressed: () {
-              _showMenu(context);
-            },
+            onPressed: () => _showMenu(context),
             tooltip: 'Menu',
           ),
         ],
@@ -51,7 +49,7 @@ class HomePage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Welcome Text - uses TextStyle from the current theme
+                // Welcome Text
                 Text(
                   'Welcome to UCS Booking',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
@@ -82,93 +80,11 @@ class HomePage extends StatelessWidget {
                 const SizedBox(height: 16),
                 
                 // Campus cards
-                _buildCampusCard(
-                  context,
-                  'Taunton',
-                  'Wellington Road, Taunton',
-                  Icons.school,
-                ),
-                const SizedBox(height: 12),
-                _buildCampusCard(
-                  context,
-                  'Bridgwater',
-                  'Bath Road, Bridgwater',
-                  Icons.account_balance,
-                ),
-                const SizedBox(height: 12),
-                _buildCampusCard(
-                  context,
-                  'Cannington',
-                  'Rodway, Cannington',
-                  Icons.park,
-                ),
+                _buildCampusList(context),
                 
                 // Help and Contact section
                 const SizedBox(height: 32),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: primaryColor.withAlpha(20),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Need Help?',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: primaryColor,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'If you need assistance with booking or have questions about our services, please contact us.',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          _buildContactButton(
-                            context,
-                            Icons.email,
-                            'Email',
-                            () {
-                              // Email action
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Opening email...')),
-                              );
-                            },
-                          ),
-                          _buildContactButton(
-                            context,
-                            Icons.phone,
-                            'Call',
-                            () {
-                              // Call action
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Calling support...')),
-                              );
-                            },
-                          ),
-                          // Chat button that opens the ChatBot
-                          _buildContactButton(
-                            context,
-                            Icons.chat,
-                            'Chat',
-                            () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => const ChatBotScreen()),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
+                _buildHelpSection(context),
               ],
             ),
           ),
@@ -187,30 +103,20 @@ class HomePage extends StatelessWidget {
             themeProvider.isDarkMode ? Icons.dark_mode : Icons.light_mode,
             color: primaryColor,
           ),
-          onPressed: () {
-            themeProvider.toggleDarkMode();
-          },
+          onPressed: () => themeProvider.toggleDarkMode(),
           tooltip: 'Toggle Dark Mode',
         ),
         
         // Font size options
         IconButton(
-          icon: const Icon(
-            Icons.text_fields,
-            color: primaryColor,
-          ),
-          onPressed: () {
-            _showFontSizePopup(context, themeProvider);
-          },
+          icon: const Icon(Icons.text_fields, color: primaryColor),
+          onPressed: () => _showFontSizePopup(context, themeProvider),
           tooltip: 'Change Text Size',
         ),
         
         // High contrast toggle
         IconButton(
-          icon: const Icon(
-            Icons.contrast,
-            color: primaryColor,
-          ),
+          icon: const Icon(Icons.contrast, color: primaryColor),
           onPressed: () {
             // Show message since high contrast is not fully implemented
             ScaffoldMessenger.of(context).showSnackBar(
@@ -232,48 +138,49 @@ class HomePage extends StatelessWidget {
       context: context,
       position: RelativeRect.fromLTRB(100, 80, 0, 0),
       items: [
-        PopupMenuItem(
-          value: 0.8,
-          child: Row(
-            children: [
-              const Text('A', style: TextStyle(fontSize: 14)),
-              const SizedBox(width: 8),
-              const Text('Small'),
-              const Spacer(),
-              if (currentSize == 0.8) const Icon(Icons.check, color: primaryColor),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: 1.0,
-          child: Row(
-            children: [
-              const Text('A', style: TextStyle(fontSize: 18)),
-              const SizedBox(width: 8),
-              const Text('Normal'),
-              const Spacer(),
-              if (currentSize == 1.0) const Icon(Icons.check, color: primaryColor),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: 1.2,
-          child: Row(
-            children: [
-              const Text('A', style: TextStyle(fontSize: 22)),
-              const SizedBox(width: 8),
-              const Text('Large'),
-              const Spacer(),
-              if (currentSize == 1.2) const Icon(Icons.check, color: primaryColor),
-            ],
-          ),
-        ),
+        _buildFontSizeMenuItem(0.8, 'Small', currentSize, themeProvider),
+        _buildFontSizeMenuItem(1.0, 'Normal', currentSize, themeProvider),
+        _buildFontSizeMenuItem(1.2, 'Large', currentSize, themeProvider),
       ],
-    ).then((value) {
-      if (value != null) {
-        themeProvider.setFontSize(value);
-      }
-    });
+    );
+  }
+
+  PopupMenuItem _buildFontSizeMenuItem(double size, String label, double currentSize, ThemeProvider themeProvider) {
+    return PopupMenuItem(
+      value: size,
+      child: Row(
+        children: [
+          Text('A', style: TextStyle(fontSize: size * 18)),
+          const SizedBox(width: 8),
+          Text(label),
+          const Spacer(),
+          if (currentSize == size) const Icon(Icons.check, color: primaryColor),
+        ],
+      ),
+      onTap: () => themeProvider.setFontSize(size),
+    );
+  }
+
+  Widget _buildCampusList(BuildContext context) {
+    final campuses = [
+      {'name': 'Taunton', 'address': 'Wellington Road, Taunton', 'icon': Icons.school},
+      {'name': 'Bridgwater', 'address': 'Bath Road, Bridgwater', 'icon': Icons.account_balance},
+      {'name': 'Cannington', 'address': 'Rodway, Cannington', 'icon': Icons.park},
+    ];
+
+    return Column(
+      children: campuses.map((campus) => 
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12.0),
+          child: _buildCampusCard(
+            context, 
+            campus['name'] as String, 
+            campus['address'] as String, 
+            campus['icon'] as IconData
+          ),
+        )
+      ).toList(),
+    );
   }
 
   Widget _buildCampusCard(
@@ -340,6 +247,64 @@ class HomePage extends StatelessWidget {
     );
   }
 
+  Widget _buildHelpSection(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: primaryColor.withAlpha(20),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Need Help?',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: primaryColor,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'If you need assistance with booking or have questions about our services, please contact us.',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildContactButton(
+                context,
+                Icons.email,
+                'Email',
+                () => ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Opening email...')),
+                ),
+              ),
+              _buildContactButton(
+                context,
+                Icons.phone,
+                'Call',
+                () => ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Calling support...')),
+                ),
+              ),
+              _buildContactButton(
+                context,
+                Icons.chat,
+                'Chat',
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ChatBotScreen()),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildContactButton(
     BuildContext context,
     IconData icon,
@@ -367,109 +332,121 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  void _showMenu(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (BuildContext context) {
-        return Container(
-          padding: const EdgeInsets.all(20),
-          child: Wrap(
-            children: [
-              ListTile(
-                leading: const Icon(Icons.person, color: primaryColor),
-                title: Text(
-                  'My Profile',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Profile feature coming soon')),
-                  );
-                },
+ void _showMenu(BuildContext context) {
+  // Get the position for the menu to appear from the top right
+  final RenderBox? appBar = context.findRenderObject() as RenderBox?;
+  final appBarHeight = appBar?.size.height ?? kToolbarHeight;
+  
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return Align(
+        alignment: Alignment.topRight,
+        child: Padding(
+          padding: EdgeInsets.only(top: appBarHeight, right: 10),
+          child: Material(
+            elevation: 4.0,
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              width: 280,
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
               ),
-              ListTile(
-                leading: const Icon(Icons.calendar_today, color: primaryColor),
-                title: Text(
-                  'My Bookings',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildMenuItem(
                     context,
-                    MaterialPageRoute(builder: (context) => const my_bookings.MyBookingsPage()),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.settings_accessibility, color: primaryColor),
-                title: Text(
-                  'Accessibility Settings',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
+                    'My Profile',
+                    Icons.person,
+                    () => ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Profile feature coming soon')),
+                    ),
+                  ),
+                  _buildMenuItem(
                     context,
-                    MaterialPageRoute(builder: (context) => const SettingsScreen()),
-                  );
-                },
-              ),
-              // Add chat option to the menu
-              ListTile(
-                leading: const Icon(Icons.chat_bubble_outline, color: primaryColor),
-                title: Text(
-                  'Chat Assistant',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
+                    'My Bookings',
+                    Icons.calendar_today,
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const MyBookingsPage()),
+                    ),
+                  ),
+                  _buildMenuItem(
                     context,
-                    MaterialPageRoute(builder: (context) => const ChatBotScreen()),
-                  );
-                },
-              ),
-              const Divider(),
-              ListTile(
-                leading: const Icon(Icons.help_outline, color: primaryColor),
-                title: Text(
-                  'Help & Support',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Help center coming soon')),
-                  );
-                },
-              ),
-              const Divider(),
-              ListTile(
-                leading: const Icon(Icons.logout, color: primaryColor),
-                title: Text(
-                  'Logout',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                onTap: () {
-                  // Clear current user
-                  CurrentUser.logout();
-                  
-                  Navigator.pop(context);
-                  Navigator.pushAndRemoveUntil(
+                    'Accessibility Settings',
+                    Icons.settings_accessibility,
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                    ),
+                  ),
+                  _buildMenuItem(
                     context,
-                    MaterialPageRoute(builder: (context) => const LoginScreen()),
-                    (route) => false,
-                  );
-                },
+                    'Chat Assistant',
+                    Icons.chat_bubble_outline,
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const ChatBotScreen()),
+                    ),
+                  ),
+                  const Divider(),
+                  _buildMenuItem(
+                    context,
+                    'Help & Support',
+                    Icons.help_outline,
+                    () => ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Help center coming soon')),
+                    ),
+                  ),
+                  const Divider(),
+                  _buildMenuItem(
+                    context,
+                    'Logout',
+                    Icons.logout,
+                    () {
+                      CurrentUser.logout();
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(builder: (context) => const LoginScreen()),
+                        (route) => false,
+                      );
+                    },
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        );
+        ),
+      );
+    },
+  );
+}
+
+  Widget _buildMenuItem(
+    BuildContext context,
+    String title,
+    IconData icon,
+    VoidCallback onTap,
+  ) {
+    return ListTile(
+      leading: Icon(icon, color: primaryColor),
+      title: Text(
+        title,
+        style: Theme.of(context).textTheme.titleMedium,
+      ),
+      onTap: () {
+        Navigator.pop(context);
+        onTap();
       },
     );
   }

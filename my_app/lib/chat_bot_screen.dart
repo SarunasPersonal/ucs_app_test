@@ -4,7 +4,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-
 class ChatBotScreen extends StatefulWidget {
   const ChatBotScreen({super.key});
 
@@ -50,10 +49,7 @@ class _ChatBotScreenState extends State<ChatBotScreen> {
     _messageController.clear();
     
     setState(() {
-      _messages.add(ChatMessage(
-        text: text,
-        isUser: true,
-      ));
+      _messages.add(ChatMessage(text: text, isUser: true));
       _isTyping = true;
     });
     
@@ -65,10 +61,7 @@ class _ChatBotScreenState extends State<ChatBotScreen> {
     
     setState(() {
       _isTyping = false;
-      _messages.add(ChatMessage(
-        text: response,
-        isUser: false,
-      ));
+      _messages.add(ChatMessage(text: response, isUser: false));
     });
     
     // Scroll to the bottom again after adding the response
@@ -89,16 +82,14 @@ class _ChatBotScreenState extends State<ChatBotScreen> {
       }
     }
     
-    // If available, you could call an open-source API here
-    // For demonstration, we'll use a simple fallback response
     try {
-      // Example: Using LibreChat API (replace with actual open source endpoint)
+      // Call the Ollama API for a response
       final response = await http.post(
-      Uri.parse('http://localhost:11434/api/generate'),
-      headers: {'Content-Type': 'application/json'},
-       body: jsonEncode({
-        'model': 'mistral',
-        'prompt': '''You are a helpful booking assistant for UCS (University Centre Somerset).
+        Uri.parse('http://localhost:11434/api/generate'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'model': 'mistral',
+          'prompt': '''You are a helpful booking assistant for UCS (University Centre Somerset).
 You help users book rooms, check facilities, and answer questions about bookings.
 Keep responses brief, friendly, and helpful. Stick to information related to:
 - Room bookings (quiet rooms, conference rooms, study rooms)
@@ -107,41 +98,40 @@ Keep responses brief, friendly, and helpful. Stick to information related to:
 - Booking procedures
 
 User question: $message''',
-        'stream': false
-      }),
-    );
-    
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      // The response is in the 'response' field
-      String aiResponse = data['response'];
+          'stream': false
+        }),
+      );
       
-      // Clean up the response to make it more concise
-      aiResponse = aiResponse.trim();
-      
-      // If the response is too long, truncate it
-      if (aiResponse.length > 300) {
-        final sentences = aiResponse.split(RegExp(r'(?<=[.!?])\s+'));
-        aiResponse = sentences.take(3).join(' ');
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        String aiResponse = data['response'];
+        
+        // Clean up the response to make it more concise
+        aiResponse = aiResponse.trim();
+        
+        // If the response is too long, truncate it
+        if (aiResponse.length > 300) {
+          final sentences = aiResponse.split(RegExp(r'(?<=[.!?])\s+'));
+          aiResponse = sentences.take(3).join(' ');
+        }
+        
+        return aiResponse;
       }
-      
-      return aiResponse;
+    } catch (e) {
+      debugPrint('Error calling Ollama API: $e');
+      // Fall back to generic responses on error
     }
-  } catch (e) {
-   debugPrint('Error calling Ollama API: $e');
-    // Fall back to generic responses on error
+    
+    // Fallback to predefined generic responses
+    final genericResponses = [
+      "I understand you're asking about ${message.split(' ').take(3).join(' ')}... Could you tell me more specifically what you need help with?",
+      "For assistance with booking rooms, please try asking about 'book', 'rooms', or 'features'.",
+      "I'm here to help with your booking needs. For specific questions about campus facilities, try asking about 'hours' or 'features'.",
+      "I don't have enough information to answer that question. Could you try rephrasing it?",
+    ];
+    
+    return genericResponses[DateTime.now().second % genericResponses.length];
   }
-  
-  // Fallback to predefined generic responses
-  final genericResponses = [
-    "I understand you're asking about ${message.split(' ').take(3).join(' ')}... Could you tell me more specifically what you need help with?",
-    "For assistance with booking rooms, please try asking about 'book', 'rooms', or 'features'.",
-    "I'm here to help with your booking needs. For specific questions about campus facilities, try asking about 'hours' or 'features'.",
-    "I don't have enough information to answer that question. Could you try rephrasing it?",
-  ];
-  
-  return genericResponses[DateTime.now().second % genericResponses.length];
-}
 
   @override
   Widget build(BuildContext context) {
@@ -161,63 +151,7 @@ User question: $message''',
       body: Column(
         children: [
           // Welcome message card
-          if (_messages.isEmpty)
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Card(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: primaryColor.withAlpha(26),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Icon(
-                              Icons.smart_toy,
-                              color: primaryColor,
-                              size: 24,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          const Text(
-                            'UCS Booking Assistant',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: primaryColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'Hello! I can help you with:',
-                        style: TextStyle(fontSize: 16),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text('• Booking room information'),
-                      const Text('• Campus facilities'),
-                      const Text('• Booking procedures'),
-                      const Text('• Cancellation policies'),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'How can I assist you today?',
-                        style: TextStyle(fontSize: 16),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+          if (_messages.isEmpty) _buildWelcomeCard(),
             
           // Chat messages
           Expanded(
@@ -225,71 +159,135 @@ User question: $message''',
               controller: _scrollController,
               padding: const EdgeInsets.all(16.0),
               itemCount: _messages.length,
-              itemBuilder: (context, index) {
-                return _buildMessage(_messages[index]);
-              },
+              itemBuilder: (context, index) => _buildMessage(_messages[index]),
             ),
           ),
           
           // Bot typing indicator
-          if (_isTyping)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: primaryColor.withAlpha(26),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Row(
-                      children: [
-                        SizedBox(
-                          width: 40,
-                          child: _TypingIndicator(),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          if (_isTyping) _buildTypingIndicator(),
           
           // Divider
           const Divider(height: 1.0),
           
           // Message input field
-          Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    decoration: const InputDecoration(
-                      hintText: 'Ask a question...',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(25.0)),
-                      ),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+          _buildMessageInput(),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildWelcomeCard() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Card(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: primaryColor.withAlpha(26),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    textCapitalization: TextCapitalization.sentences,
-                    onSubmitted: _handleSubmitted,
+                    child: const Icon(
+                      Icons.smart_toy,
+                      color: primaryColor,
+                      size: 24,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8.0),
-                FloatingActionButton(
-                  onPressed: () => _handleSubmitted(_messageController.text),
-                  backgroundColor: primaryColor,
-                  elevation: 0,
-                  child: const Icon(Icons.send, color: secondaryColor),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'UCS Booking Assistant',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: primaryColor,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Hello! I can help you with:',
+                style: TextStyle(fontSize: 16),
+              ),
+              const SizedBox(height: 8),
+              const Text('• Booking room information'),
+              const Text('• Campus facilities'),
+              const Text('• Booking procedures'),
+              const Text('• Cancellation policies'),
+              const SizedBox(height: 8),
+              const Text(
+                'How can I assist you today?',
+                style: TextStyle(fontSize: 16),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildTypingIndicator() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: primaryColor.withAlpha(26),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Row(
+              children: [
+                SizedBox(
+                  width: 40,
+                  child: _TypingIndicator(),
                 ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildMessageInput() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _messageController,
+              decoration: const InputDecoration(
+                hintText: 'Ask a question...',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(25.0)),
+                ),
+                contentPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+              ),
+              textCapitalization: TextCapitalization.sentences,
+              onSubmitted: _handleSubmitted,
+            ),
+          ),
+          const SizedBox(width: 8.0),
+          FloatingActionButton(
+            onPressed: () => _handleSubmitted(_messageController.text),
+            backgroundColor: primaryColor,
+            elevation: 0,
+            child: const Icon(Icons.send, color: secondaryColor),
           ),
         ],
       ),
@@ -376,21 +374,21 @@ class _TypingIndicatorState extends State<_TypingIndicator> with SingleTickerPro
   }
   
   Widget _buildDot(int index) {
-    final double delay = (index * 0.33).clamp(0.0, 0.5);  // Clamp delay to valid range
-    final double end = (delay + 0.5).clamp(0.0, 1.0);     // Ensure end is valid and ≤ 1.0
+    final double delay = (index * 0.33).clamp(0.0, 0.5);
+    final double end = (delay + 0.5).clamp(0.0, 1.0);
     final animation = Tween<double>(begin: 0.0, end: 1.0).animate(
-  CurvedAnimation(
-    parent: _controller,
-    curve: Interval(delay, end, curve: Curves.easeOut),
-  ),
-);
+      CurvedAnimation(
+        parent: _controller,
+        curve: Interval(delay, end, curve: Curves.easeOut),
+      ),
+    );
     
     return Transform.translate(
       offset: Offset(0, -3 * animation.value),
       child: Container(
         width: 6,
         height: 6,
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           color: primaryColor,
           shape: BoxShape.circle,
         ),

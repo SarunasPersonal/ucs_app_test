@@ -9,9 +9,7 @@ class CurrentUser {
   static String? email;
   static String? userId;
   
-  static bool isLoggedIn() {
-    return email != null && userId != null;
-  }
+  static bool isLoggedIn() => email != null && userId != null;
   
   static void login(String userEmail, String id) {
     email = userEmail;
