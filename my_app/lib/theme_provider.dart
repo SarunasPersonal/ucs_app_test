@@ -163,6 +163,7 @@ class ThemeProvider extends ChangeNotifier {
   final ThemeData _lightTheme = ThemeData(
     brightness: Brightness.light,
     primaryColor: primaryColor,
+     fontFamily: 'Roboto',
     colorScheme: const ColorScheme.light(
       primary: primaryColor,
       secondary: secondaryColor,
@@ -202,6 +203,7 @@ class ThemeProvider extends ChangeNotifier {
   final ThemeData _darkTheme = ThemeData(
     brightness: Brightness.dark,
     primaryColor: primaryColor,
+     fontFamily: 'Roboto',
     colorScheme: const ColorScheme.dark(
       primary: primaryColor,
       secondary: secondaryColor,

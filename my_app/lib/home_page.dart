@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_ucs_app/constants.dart';
-import 'package:flutter_ucs_app/booking_page.dart'; // Import BookingPage
+import 'package:flutter_ucs_app/booking_page.dart';
 import 'package:flutter_ucs_app/login_screen.dart';
-import 'package:flutter_ucs_app/my_bookings_page.dart' as my_bookings; // Use alias to avoid conflict
+import 'package:flutter_ucs_app/my_bookings_page.dart' as my_bookings;
 import 'package:flutter_ucs_app/settings_screen.dart';
 import 'package:flutter_ucs_app/theme_provider.dart';
+import 'package:flutter_ucs_app/chat_bot_screen.dart'; // Import the ChatBot screen
 import 'package:provider/provider.dart';
 
 class HomePage extends StatelessWidget {
@@ -52,7 +53,7 @@ class HomePage extends StatelessWidget {
               children: [
                 // Welcome Text - uses TextStyle from the current theme
                 Text(
-                  'Welcome',
+                  'Welcome to UCS Booking',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     color: primaryColor,
                     fontWeight: FontWeight.bold,
@@ -151,14 +152,15 @@ class HomePage extends StatelessWidget {
                               );
                             },
                           ),
+                          // Chat button that opens the ChatBot
                           _buildContactButton(
                             context,
                             Icons.chat,
                             'Chat',
                             () {
-                              // Chat action
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Opening chat...')),
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const ChatBotScreen()),
                               );
                             },
                           ),
@@ -414,6 +416,21 @@ class HomePage extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                  );
+                },
+              ),
+              // Add chat option to the menu
+              ListTile(
+                leading: const Icon(Icons.chat_bubble_outline, color: primaryColor),
+                title: Text(
+                  'Chat Assistant',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const ChatBotScreen()),
                   );
                 },
               ),
