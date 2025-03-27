@@ -63,7 +63,11 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
             ),
             TextButton(
               onPressed: () {
-                _bookingService.deleteBooking(booking.location, booking.dateTime);
+                _bookingService.deleteBooking(
+                  booking.location, 
+                  booking.dateTime,
+                  booking.roomType
+                );
                 Navigator.of(context).pop();
                 setState(() {
                   _loadBookings();
@@ -87,7 +91,7 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: whiteColor,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: primaryColor),
@@ -157,7 +161,7 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                       side: BorderSide(
-                        color: isUpcoming ? primaryColor.withAlpha(77) : Colors.grey.withAlpha(77), // 0.3 opacity
+                        color: isUpcoming ? primaryColor.withAlpha(77) : Colors.grey.withAlpha(77),
                         width: 1,
                       ),
                     ),
@@ -172,8 +176,8 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
                                   color: isUpcoming
-                                      ? primaryColor.withAlpha(26) // 0.1 opacity
-                                      : Colors.grey.withAlpha(26), // 0.1 opacity
+                                      ? primaryColor.withAlpha(26)
+                                      : Colors.grey.withAlpha(26),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Icon(
@@ -196,6 +200,24 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
                                       ),
                                     ),
                                     const SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          booking.roomType.icon,
+                                          size: 16,
+                                          color: isUpcoming ? primaryColor : Colors.grey,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          booking.roomType.displayName,
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: isUpcoming ? Colors.black87 : Colors.grey,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
                                     Text(
                                       formattedDateTime,
                                       style: TextStyle(
@@ -213,43 +235,64 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
                                 ),
                             ],
                           ),
-                          if (isUpcoming) ...[
-                            const SizedBox(height: 16),
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                              decoration: BoxDecoration(
-                                color: primaryColor.withAlpha(26), // 0.1 opacity
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Text(
-                                'Upcoming Booking',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: primaryColor,
-                                ),
+                          
+                          // Show room features if any exist
+                          if (booking.features.isNotEmpty) ...[
+                            const SizedBox(height: 12),
+                            const Divider(),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Features:',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: isUpcoming ? primaryColor : Colors.grey,
+                                fontSize: 14,
                               ),
                             ),
-                          ] else ...[
-                            const SizedBox(height: 16),
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                              decoration: BoxDecoration(
-                                color: Colors.grey.withAlpha(26), // 0.1 opacity
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Text(
-                                'Past Booking',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey,
-                                ),
-                              ),
+                            const SizedBox(height: 6),
+                            Wrap(
+                              spacing: 8,
+                              children: booking.features.map((feature) {
+                                return Chip(
+                                  backgroundColor: isUpcoming 
+                                      ? primaryColor.withAlpha(26) 
+                                      : Colors.grey.withAlpha(26),
+                                  label: Text(
+                                    feature.displayName,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: isUpcoming ? primaryColor : Colors.grey,
+                                    ),
+                                  ),
+                                  avatar: Icon(
+                                    feature.icon, 
+                                    size: 14, 
+                                    color: isUpcoming ? primaryColor : Colors.grey,
+                                  ),
+                                );
+                              }).toList(),
                             ),
                           ],
+                          
+                          const SizedBox(height: 16),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            decoration: BoxDecoration(
+                              color: isUpcoming
+                                  ? primaryColor.withAlpha(26)
+                                  : Colors.grey.withAlpha(26),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              isUpcoming ? 'Upcoming Booking' : 'Past Booking',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: isUpcoming ? primaryColor : Colors.grey,
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),

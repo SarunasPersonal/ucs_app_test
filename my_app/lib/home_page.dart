@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_ucs_app/constants.dart';
-import 'package:flutter_ucs_app/booking_page.dart';
+import 'package:flutter_ucs_app/booking_page.dart'; // Import BookingPage
 import 'package:flutter_ucs_app/login_screen.dart';
-import 'package:flutter_ucs_app/my_bookings_page.dart';
+import 'package:flutter_ucs_app/my_bookings_page.dart' as my_bookings; // Use alias to avoid conflict
 import 'package:flutter_ucs_app/settings_screen.dart';
 import 'package:flutter_ucs_app/theme_provider.dart';
 import 'package:provider/provider.dart';
@@ -31,17 +31,9 @@ class HomePage extends StatelessWidget {
           ),
         ),
         actions: [
-          // Accessibility quick toggle
-          IconButton(
-            icon: Icon(
-              themeProvider.isDarkMode ? Icons.dark_mode : Icons.light_mode,
-              color: primaryColor,
-            ),
-            onPressed: () {
-              themeProvider.toggleDarkMode();
-            },
-            tooltip: 'Toggle Dark Mode',
-          ),
+          // Compact accessibility toolbar
+          _buildCompactAccessibilityToolbar(context, themeProvider),
+          
           IconButton(
             icon: const Icon(Icons.menu, color: primaryColor),
             onPressed: () {
@@ -60,7 +52,7 @@ class HomePage extends StatelessWidget {
               children: [
                 // Welcome Text - uses TextStyle from the current theme
                 Text(
-                  'Welcome to UCS Booking',
+                  'Welcome',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     color: primaryColor,
                     fontWeight: FontWeight.bold,
@@ -68,145 +60,9 @@ class HomePage extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Select a campus to book your appointment',
+                  'Select a campus to book your space',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: Colors.grey,
-                  ),
-                ),
-
-                // Accessibility Info Card
-                const SizedBox(height: 24),
-                Card(
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.accessibility_new, 
-                              color: primaryColor,
-                              size: 24,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Accessibility Options',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                color: primaryColor,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'This app supports accessibility features to make it easier to use.',
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            // Dark mode toggle with switch
-                            Row(
-                              children: [
-                                Icon(
-                                  themeProvider.isDarkMode ? Icons.dark_mode : Icons.light_mode,
-                                  size: 20,
-                                  color: primaryColor,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Dark Mode',
-                                  style: Theme.of(context).textTheme.bodyMedium,
-                                ),
-                              ],
-                            ),
-                            Switch(
-                              value: themeProvider.isDarkMode,
-                              onChanged: (value) {
-                                themeProvider.toggleDarkMode();
-                              },
-                              activeColor: primaryColor,
-                            ),
-                          ],
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            // Text size label
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.text_fields,
-                                  size: 20,
-                                  color: primaryColor,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Text Size',
-                                  style: Theme.of(context).textTheme.bodyMedium,
-                                ),
-                              ],
-                            ),
-                            // Text size dropdown
-                            DropdownButton<double>(
-                              value: themeProvider.fontSize,
-                              items: const [
-                                DropdownMenuItem(
-                                  value: 0.8,
-                                  child: Text('Small'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 1.0,
-                                  child: Text('Normal'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 1.2,
-                                  child: Text('Large'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 1.4,
-                                  child: Text('Extra Large'),
-                                ),
-                              ],
-                              onChanged: (value) {
-                                if (value != null) {
-                                  themeProvider.setFontSize(value);
-                                }
-                              },
-                              underline: Container(
-                                height: 2,
-                                color: primaryColor,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        OutlinedButton.icon(
-                          icon: const Icon(
-                            Icons.settings_accessibility,
-                            color: primaryColor,
-                          ),
-                          label: Text(
-                            'More Accessibility Settings',
-                            style: TextStyle(color: primaryColor),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: primaryColor),
-                          ),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => const SettingsScreen()),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
                   ),
                 ),
 
@@ -317,6 +173,105 @@ class HomePage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildCompactAccessibilityToolbar(BuildContext context, ThemeProvider themeProvider) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Dark mode toggle
+        IconButton(
+          icon: Icon(
+            themeProvider.isDarkMode ? Icons.dark_mode : Icons.light_mode,
+            color: primaryColor,
+          ),
+          onPressed: () {
+            themeProvider.toggleDarkMode();
+          },
+          tooltip: 'Toggle Dark Mode',
+        ),
+        
+        // Font size options
+        IconButton(
+          icon: const Icon(
+            Icons.text_fields,
+            color: primaryColor,
+          ),
+          onPressed: () {
+            _showFontSizePopup(context, themeProvider);
+          },
+          tooltip: 'Change Text Size',
+        ),
+        
+        // High contrast toggle
+        IconButton(
+          icon: const Icon(
+            Icons.contrast,
+            color: primaryColor,
+          ),
+          onPressed: () {
+            // Show message since high contrast is not fully implemented
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('High contrast mode coming soon')),
+            );
+            // When implemented:
+            // themeProvider.toggleHighContrast();
+          },
+          tooltip: 'Toggle High Contrast',
+        ),
+      ],
+    );
+  }
+
+  void _showFontSizePopup(BuildContext context, ThemeProvider themeProvider) {
+    final double currentSize = themeProvider.fontSize;
+    
+    showMenu(
+      context: context,
+      position: RelativeRect.fromLTRB(100, 80, 0, 0),
+      items: [
+        PopupMenuItem(
+          value: 0.8,
+          child: Row(
+            children: [
+              const Text('A', style: TextStyle(fontSize: 14)),
+              const SizedBox(width: 8),
+              const Text('Small'),
+              const Spacer(),
+              if (currentSize == 0.8) const Icon(Icons.check, color: primaryColor),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: 1.0,
+          child: Row(
+            children: [
+              const Text('A', style: TextStyle(fontSize: 18)),
+              const SizedBox(width: 8),
+              const Text('Normal'),
+              const Spacer(),
+              if (currentSize == 1.0) const Icon(Icons.check, color: primaryColor),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: 1.2,
+          child: Row(
+            children: [
+              const Text('A', style: TextStyle(fontSize: 22)),
+              const SizedBox(width: 8),
+              const Text('Large'),
+              const Spacer(),
+              if (currentSize == 1.2) const Icon(Icons.check, color: primaryColor),
+            ],
+          ),
+        ),
+      ],
+    ).then((value) {
+      if (value != null) {
+        themeProvider.setFontSize(value);
+      }
+    });
   }
 
   Widget _buildCampusCard(
@@ -444,7 +399,7 @@ class HomePage extends StatelessWidget {
                   Navigator.pop(context);
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const MyBookingsPage()),
+                    MaterialPageRoute(builder: (context) => const my_bookings.MyBookingsPage()),
                   );
                 },
               ),

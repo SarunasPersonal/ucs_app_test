@@ -17,6 +17,15 @@ class _BookingPageState extends State<BookingPage> {
   String? formattedDateTime;
   final BookingService _bookingService = BookingService();
   bool _isLoading = false;
+  
+  // Room selection
+  RoomType _selectedRoomType = RoomType.quietRoom;
+  final Map<RoomFeature, bool> _selectedFeatures = {
+    RoomFeature.projector: false,
+    RoomFeature.whiteboard: false,
+    RoomFeature.videoConferencing: false,
+    RoomFeature.computerEquipment: false,
+  };
 
   void _selectDateTime(BuildContext context) async {
     final DateTime? pickedDate = await showDatePicker(
@@ -93,26 +102,64 @@ class _BookingPageState extends State<BookingPage> {
       return;
     }
 
+    // Get list of selected features
+    final List<RoomFeature> features = _selectedFeatures.entries
+        .where((entry) => entry.value)
+        .map((entry) => entry.key)
+        .toList();
+
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: const Text('Confirm Booking'),
-          content: RichText(
-            text: TextSpan(
-              style: const TextStyle(color: Colors.black, fontSize: 16),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const TextSpan(text: 'Are you sure you want to book '),
-                TextSpan(
-                  text: widget.location,
-                  style: const TextStyle(fontWeight: FontWeight.bold, color: primaryColor),
+                RichText(
+                  text: TextSpan(
+                    style: const TextStyle(color: Colors.black, fontSize: 16),
+                    children: [
+                      const TextSpan(text: 'Are you sure you want to book a '),
+                      TextSpan(
+                        text: _selectedRoomType.displayName,
+                        style: const TextStyle(fontWeight: FontWeight.bold, color: primaryColor),
+                      ),
+                      const TextSpan(text: ' at '),
+                      TextSpan(
+                        text: widget.location,
+                        style: const TextStyle(fontWeight: FontWeight.bold, color: primaryColor),
+                      ),
+                      const TextSpan(text: ' for '),
+                      TextSpan(
+                        text: formattedDateTime,
+                        style: const TextStyle(fontWeight: FontWeight.bold, color: primaryColor),
+                      ),
+                      const TextSpan(text: '?'),
+                    ],
+                  ),
                 ),
-                const TextSpan(text: ' for '),
-                TextSpan(
-                  text: formattedDateTime,
-                  style: const TextStyle(fontWeight: FontWeight.bold, color: primaryColor),
-                ),
-                const TextSpan(text: '?'),
+                
+                if (features.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  const Text(
+                    'With the following features:',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  ...features.map((feature) => Padding(
+                    padding: const EdgeInsets.only(top: 4.0),
+                    child: Row(
+                      children: [
+                        Icon(feature.icon, size: 16, color: primaryColor),
+                        const SizedBox(width: 8),
+                        Text(feature.displayName),
+                      ],
+                    ),
+                  )),
+                ],
               ],
             ),
           ),
@@ -142,11 +189,19 @@ class _BookingPageState extends State<BookingPage> {
     });
 
     try {
+      // Get list of selected features
+      final List<RoomFeature> features = _selectedFeatures.entries
+          .where((entry) => entry.value)
+          .map((entry) => entry.key)
+          .toList();
+          
       // Create a new booking
       final newBooking = Booking(
         location: widget.location,
         dateTime: selectedDateTime!,
         userId: CurrentUser.userId ?? 'unknown',
+        roomType: _selectedRoomType,
+        features: features,
       );
       
       _bookingService.addBooking(newBooking);
@@ -157,7 +212,7 @@ class _BookingPageState extends State<BookingPage> {
       // Show confirmation message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Booking confirmed for ${widget.location} on $formattedDateTime'),
+          content: Text('${_selectedRoomType.displayName} booking confirmed at ${widget.location} on $formattedDateTime'),
           duration: const Duration(seconds: 4),
           backgroundColor: Colors.green,
         ),
@@ -215,7 +270,7 @@ class _BookingPageState extends State<BookingPage> {
                 height: 200,
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: primaryColor.withAlpha(26), // 0.1 opacity is roughly alpha 26
+                  color: primaryColor.withAlpha(26),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Center(
@@ -243,6 +298,195 @@ class _BookingPageState extends State<BookingPage> {
                   color: Colors.grey,
                 ),
               ),
+              
+              const SizedBox(height: 30),
+              
+              // Room Type Selection
+              const Text(
+                'Select Room Type',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: primaryColor,
+                ),
+              ),
+              const SizedBox(height: 15),
+              
+              Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  children: [
+                    RadioListTile<RoomType>(
+                      title: Row(
+                        children: [
+                          Icon(RoomType.quietRoom.icon, color: primaryColor),
+                          const SizedBox(width: 10),
+                          Text(RoomType.quietRoom.displayName),
+                        ],
+                      ),
+                      subtitle: const Text('Individual space for focused work'),
+                      value: RoomType.quietRoom,
+                      groupValue: _selectedRoomType,
+                      activeColor: primaryColor,
+                      onChanged: (RoomType? value) {
+                        if (value != null) {
+                          setState(() {
+                            _selectedRoomType = value;
+                            // Clear features when switching to quiet room
+                            if (value == RoomType.quietRoom) {
+                              _resetFeatures();
+                            }
+                          });
+                        }
+                      },
+                    ),
+                    
+                    RadioListTile<RoomType>(
+                      title: Row(
+                        children: [
+                          Icon(RoomType.conferenceRoom.icon, color: primaryColor),
+                          const SizedBox(width: 10),
+                          Text(RoomType.conferenceRoom.displayName),
+                        ],
+                      ),
+                      subtitle: const Text('Meeting space for groups'),
+                      value: RoomType.conferenceRoom,
+                      groupValue: _selectedRoomType,
+                      activeColor: primaryColor,
+                      onChanged: (RoomType? value) {
+                        if (value != null) {
+                          setState(() {
+                            _selectedRoomType = value;
+                          });
+                        }
+                      },
+                    ),
+                    
+                    RadioListTile<RoomType>(
+                      title: Row(
+                        children: [
+                          Icon(RoomType.studyRoom.icon, color: primaryColor),
+                          const SizedBox(width: 10),
+                          Text(RoomType.studyRoom.displayName),
+                        ],
+                      ),
+                      subtitle: const Text('Collaborative space for study groups'),
+                      value: RoomType.studyRoom,
+                      groupValue: _selectedRoomType,
+                      activeColor: primaryColor,
+                      onChanged: (RoomType? value) {
+                        if (value != null) {
+                          setState(() {
+                            _selectedRoomType = value;
+                          });
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Room Features (only visible for conference and study rooms)
+              if (_selectedRoomType != RoomType.quietRoom) ...[
+                const SizedBox(height: 25),
+                const Text(
+                  'Room Features',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: primaryColor,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                
+                Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    children: [
+                      CheckboxListTile(
+                        title: Row(
+                          children: [
+                            Icon(RoomFeature.projector.icon, color: primaryColor),
+                            const SizedBox(width: 10),
+                            Text(RoomFeature.projector.displayName),
+                          ],
+                        ),
+                        value: _selectedFeatures[RoomFeature.projector],
+                        activeColor: primaryColor,
+                        onChanged: (bool? value) {
+                          if (value != null) {
+                            setState(() {
+                              _selectedFeatures[RoomFeature.projector] = value;
+                            });
+                          }
+                        },
+                      ),
+                      
+                      CheckboxListTile(
+                        title: Row(
+                          children: [
+                            Icon(RoomFeature.whiteboard.icon, color: primaryColor),
+                            const SizedBox(width: 10),
+                            Text(RoomFeature.whiteboard.displayName),
+                          ],
+                        ),
+                        value: _selectedFeatures[RoomFeature.whiteboard],
+                        activeColor: primaryColor,
+                        onChanged: (bool? value) {
+                          if (value != null) {
+                            setState(() {
+                              _selectedFeatures[RoomFeature.whiteboard] = value;
+                            });
+                          }
+                        },
+                      ),
+                      
+                      CheckboxListTile(
+                        title: Row(
+                          children: [
+                            Icon(RoomFeature.videoConferencing.icon, color: primaryColor),
+                            const SizedBox(width: 10),
+                            Text(RoomFeature.videoConferencing.displayName),
+                          ],
+                        ),
+                        value: _selectedFeatures[RoomFeature.videoConferencing],
+                        activeColor: primaryColor,
+                        onChanged: (bool? value) {
+                          if (value != null) {
+                            setState(() {
+                              _selectedFeatures[RoomFeature.videoConferencing] = value;
+                            });
+                          }
+                        },
+                      ),
+                      
+                      CheckboxListTile(
+                        title: Row(
+                          children: [
+                            Icon(RoomFeature.computerEquipment.icon, color: primaryColor),
+                            const SizedBox(width: 10),
+                            Text(RoomFeature.computerEquipment.displayName),
+                          ],
+                        ),
+                        value: _selectedFeatures[RoomFeature.computerEquipment],
+                        activeColor: primaryColor,
+                        onChanged: (bool? value) {
+                          if (value != null) {
+                            setState(() {
+                              _selectedFeatures[RoomFeature.computerEquipment] = value;
+                            });
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              
               const SizedBox(height: 30),
               const Text(
                 'Select Date & Time',
@@ -287,9 +531,9 @@ class _BookingPageState extends State<BookingPage> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: primaryColor.withAlpha(26), // 0.1 opacity
+                    color: primaryColor.withAlpha(26),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: primaryColor.withAlpha(128)), // 0.5 opacity
+                    border: Border.all(color: primaryColor.withAlpha(128)),
                   ),
                   child: Row(
                     children: [
@@ -338,6 +582,12 @@ class _BookingPageState extends State<BookingPage> {
         ),
       ),
     );
+  }
+  
+  void _resetFeatures() {
+    _selectedFeatures.forEach((key, value) {
+      _selectedFeatures[key] = false;
+    });
   }
   
   IconData _getIconForLocation(String location) {

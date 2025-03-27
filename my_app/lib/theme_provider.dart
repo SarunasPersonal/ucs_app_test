@@ -66,13 +66,95 @@ class ThemeProvider extends ChangeNotifier {
   ThemeData getTheme() {
     final baseTheme = _isDarkMode ? _darkTheme : _lightTheme;
     
-    // Apply font size scale
+    // Simply create a copy of the base theme
+    // We'll use a simpler approach that doesn't modify text styles directly
     return baseTheme.copyWith(
-      textTheme: baseTheme.textTheme.apply(
-        fontSizeFactor: _fontSize,
+      textTheme: _getTextTheme(baseTheme.brightness),
+      primaryTextTheme: _getTextTheme(baseTheme.brightness),
+    );
+  }
+  
+  // Create a text theme with the appropriate font size
+  TextTheme _getTextTheme(Brightness brightness) {
+    // Define a font size for each text style based on our scaling factor
+    final double scaleFactor = _fontSize;
+    
+    // Create a completely new text theme with explicit font sizes
+    return TextTheme(
+      displayLarge: TextStyle(
+        fontSize: 96 * scaleFactor,
+        fontWeight: FontWeight.w300,
+        color: brightness == Brightness.dark ? Colors.white : Colors.black,
       ),
-      primaryTextTheme: baseTheme.primaryTextTheme.apply(
-        fontSizeFactor: _fontSize,
+      displayMedium: TextStyle(
+        fontSize: 60 * scaleFactor,
+        fontWeight: FontWeight.w300,
+        color: brightness == Brightness.dark ? Colors.white : Colors.black,
+      ),
+      displaySmall: TextStyle(
+        fontSize: 48 * scaleFactor,
+        fontWeight: FontWeight.w400,
+        color: brightness == Brightness.dark ? Colors.white : Colors.black,
+      ),
+      headlineLarge: TextStyle(
+        fontSize: 40 * scaleFactor,
+        fontWeight: FontWeight.w400,
+        color: brightness == Brightness.dark ? Colors.white : Colors.black,
+      ),
+      headlineMedium: TextStyle(
+        fontSize: 34 * scaleFactor,
+        fontWeight: FontWeight.w400,
+        color: brightness == Brightness.dark ? Colors.white : Colors.black,
+      ),
+      headlineSmall: TextStyle(
+        fontSize: 24 * scaleFactor,
+        fontWeight: FontWeight.w400,
+        color: brightness == Brightness.dark ? Colors.white : Colors.black,
+      ),
+      titleLarge: TextStyle(
+        fontSize: 20 * scaleFactor,
+        fontWeight: FontWeight.w500,
+        color: brightness == Brightness.dark ? Colors.white : Colors.black,
+      ),
+      titleMedium: TextStyle(
+        fontSize: 16 * scaleFactor,
+        fontWeight: FontWeight.w400,
+        color: brightness == Brightness.dark ? Colors.white : Colors.black,
+      ),
+      titleSmall: TextStyle(
+        fontSize: 14 * scaleFactor,
+        fontWeight: FontWeight.w500,
+        color: brightness == Brightness.dark ? Colors.white : Colors.black,
+      ),
+      bodyLarge: TextStyle(
+        fontSize: 16 * scaleFactor,
+        fontWeight: FontWeight.w400,
+        color: brightness == Brightness.dark ? Colors.white : Colors.black,
+      ),
+      bodyMedium: TextStyle(
+        fontSize: 14 * scaleFactor,
+        fontWeight: FontWeight.w400,
+        color: brightness == Brightness.dark ? Colors.white : Colors.black,
+      ),
+      bodySmall: TextStyle(
+        fontSize: 12 * scaleFactor,
+        fontWeight: FontWeight.w400,
+        color: brightness == Brightness.dark ? Colors.white70 : Colors.black54,
+      ),
+      labelLarge: TextStyle(
+        fontSize: 14 * scaleFactor,
+        fontWeight: FontWeight.w500,
+        color: brightness == Brightness.dark ? Colors.white : Colors.black,
+      ),
+      labelMedium: TextStyle(
+        fontSize: 12 * scaleFactor,
+        fontWeight: FontWeight.w400,
+        color: brightness == Brightness.dark ? Colors.white : Colors.black,
+      ),
+      labelSmall: TextStyle(
+        fontSize: 10 * scaleFactor,
+        fontWeight: FontWeight.w400,
+        color: brightness == Brightness.dark ? Colors.white70 : Colors.black54,
       ),
     );
   }
