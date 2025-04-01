@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
+// Main screen for the chatbot
 class ChatBotScreen extends StatefulWidget {
   const ChatBotScreen({super.key});
 
@@ -11,13 +12,18 @@ class ChatBotScreen extends StatefulWidget {
   State<ChatBotScreen> createState() => _ChatBotScreenState();
 }
 
+// State class for the chatbot screen
 class _ChatBotScreenState extends State<ChatBotScreen> {
+  // Controller for the text input field
   final TextEditingController _messageController = TextEditingController();
+  // Controller for scrolling the chat messages
   final ScrollController _scrollController = ScrollController();
+  // Boolean to track if the bot is typing
   bool _isTyping = false;
+  // List to store chat messages
   final List<ChatMessage> _messages = [];
   
-  // Common predefined responses for booking-related questions
+  // Predefined responses for common questions
   final Map<String, String> _faqResponses = {
     'help': 'I can help you with booking rooms, checking your bookings, or answering questions about our campus facilities.',
     'book': 'To book a room, go to the home screen, select a campus, then choose your room type and features.',
@@ -30,11 +36,13 @@ class _ChatBotScreenState extends State<ChatBotScreen> {
 
   @override
   void dispose() {
+    // Dispose controllers when the widget is removed
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
+  // Scroll to the bottom of the chat
   void _scrollToBottom() {
     _scrollController.animateTo(
       _scrollController.position.maxScrollExtent,
@@ -43,24 +51,27 @@ class _ChatBotScreenState extends State<ChatBotScreen> {
     );
   }
 
+  // Handle when the user submits a message
   Future<void> _handleSubmitted(String text) async {
-    if (text.trim().isEmpty) return;
+    if (text.trim().isEmpty) return; // Do nothing if the message is empty
     
-    _messageController.clear();
+    _messageController.clear(); // Clear the input field
     
     setState(() {
+      // Add the user's message to the chat
       _messages.add(ChatMessage(text: text, isUser: true));
-      _isTyping = true;
+      _isTyping = true; // Show typing indicator
     });
     
     // Scroll to the bottom after adding the message
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
     
-    // Process the message and get a response
+    // Get the bot's response
     final response = await _getBotResponse(text);
     
     setState(() {
-      _isTyping = false;
+      _isTyping = false; // Hide typing indicator
+      // Add the bot's response to the chat
       _messages.add(ChatMessage(text: response, isUser: false));
     });
     
@@ -68,22 +79,23 @@ class _ChatBotScreenState extends State<ChatBotScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
   }
   
+  // Get the bot's response based on the user's message
   Future<String> _getBotResponse(String message) async {
-    // Simulate network delay for a more natural feel
+    // Simulate a delay to make the bot feel more natural
     await Future.delayed(const Duration(milliseconds: 800));
     
-    // Convert message to lowercase for case-insensitive matching
+    // Convert the message to lowercase for easier matching
     final lowerMessage = message.toLowerCase();
     
-    // Check for keywords in the message to provide relevant responses
+    // Check if the message matches any predefined responses
     for (final entry in _faqResponses.entries) {
       if (lowerMessage.contains(entry.key)) {
-        return entry.value;
+        return entry.value; // Return the matching response
       }
     }
     
     try {
-      // Call the Ollama API for a response
+      // Call the external API for a response
       final response = await http.post(
         Uri.parse('http://localhost:11434/api/generate'),
         headers: {'Content-Type': 'application/json'},
@@ -106,7 +118,7 @@ User question: $message''',
         final data = jsonDecode(response.body);
         String aiResponse = data['response'];
         
-        // Clean up the response to make it more concise
+        // Clean up the response to make it shorter and more readable
         aiResponse = aiResponse.trim();
         
         // If the response is too long, truncate it
@@ -118,11 +130,10 @@ User question: $message''',
         return aiResponse;
       }
     } catch (e) {
-      debugPrint('Error calling Ollama API: $e');
-      // Fall back to generic responses on error
+      debugPrint('Error calling Ollama API: $e'); // Log the error
     }
     
-    // Fallback to predefined generic responses
+    // Fallback responses if the API fails
     final genericResponses = [
       "I understand you're asking about ${message.split(' ').take(3).join(' ')}... Could you tell me more specifically what you need help with?",
       "For assistance with booking rooms, please try asking about 'book', 'rooms', or 'features'.",
@@ -130,6 +141,7 @@ User question: $message''',
       "I don't have enough information to answer that question. Could you try rephrasing it?",
     ];
     
+    // Return a random fallback response
     return genericResponses[DateTime.now().second % genericResponses.length];
   }
 
@@ -141,7 +153,7 @@ User question: $message''',
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: primaryColor),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pop(context), // Go back to the previous screen
         ),
         title: const Text(
           'Chat Assistant',
@@ -150,10 +162,10 @@ User question: $message''',
       ),
       body: Column(
         children: [
-          // Welcome message card
+          // Show a welcome card if there are no messages yet
           if (_messages.isEmpty) _buildWelcomeCard(),
             
-          // Chat messages
+          // Display the chat messages
           Expanded(
             child: ListView.builder(
               controller: _scrollController,
@@ -163,19 +175,20 @@ User question: $message''',
             ),
           ),
           
-          // Bot typing indicator
+          // Show typing indicator if the bot is typing
           if (_isTyping) _buildTypingIndicator(),
           
-          // Divider
+          // Divider line
           const Divider(height: 1.0),
           
-          // Message input field
+          // Input field for the user to type messages
           _buildMessageInput(),
         ],
       ),
     );
   }
   
+  // Build the welcome card shown at the start
   Widget _buildWelcomeCard() {
     return Padding(
       padding: const EdgeInsets.all(16.0),
@@ -235,6 +248,7 @@ User question: $message''',
     );
   }
   
+  // Build the typing indicator shown when the bot is typing
   Widget _buildTypingIndicator() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -260,6 +274,7 @@ User question: $message''',
     );
   }
   
+  // Build the input field for the user to type messages
   Widget _buildMessageInput() {
     return Container(
       decoration: BoxDecoration(
@@ -279,12 +294,12 @@ User question: $message''',
                 contentPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
               ),
               textCapitalization: TextCapitalization.sentences,
-              onSubmitted: _handleSubmitted,
+              onSubmitted: _handleSubmitted, // Handle message submission
             ),
           ),
           const SizedBox(width: 8.0),
           FloatingActionButton(
-            onPressed: () => _handleSubmitted(_messageController.text),
+            onPressed: () => _handleSubmitted(_messageController.text), // Send the message
             backgroundColor: primaryColor,
             elevation: 0,
             child: const Icon(Icons.send, color: secondaryColor),
@@ -294,6 +309,7 @@ User question: $message''',
     );
   }
   
+  // Build a single chat message (user or bot)
   Widget _buildMessage(ChatMessage message) {
     return Container(
       margin: EdgeInsets.only(
@@ -305,23 +321,24 @@ User question: $message''',
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
       decoration: BoxDecoration(
         color: message.isUser 
-            ? primaryColor
-            : primaryColor.withAlpha(26),
+            ? primaryColor // User messages are in primary color
+            : primaryColor.withAlpha(26), // Bot messages are lighter
         borderRadius: BorderRadius.circular(12.0),
       ),
       child: Text(
         message.text,
         style: TextStyle(
-          color: message.isUser ? Colors.white : Colors.black,
+          color: message.isUser ? Colors.white : Colors.black, // Text color depends on sender
         ),
       ),
     );
   }
 }
 
+// Class to represent a chat message
 class ChatMessage {
-  final String text;
-  final bool isUser;
+  final String text; // The message text
+  final bool isUser; // Whether the message is from the user or the bot
   
   ChatMessage({
     required this.text,
@@ -329,6 +346,7 @@ class ChatMessage {
   });
 }
 
+// Typing indicator widget
 class _TypingIndicator extends StatefulWidget {
   const _TypingIndicator();
 
@@ -336,21 +354,22 @@ class _TypingIndicator extends StatefulWidget {
   State<_TypingIndicator> createState() => _TypingIndicatorState();
 }
 
+// State for the typing indicator
 class _TypingIndicatorState extends State<_TypingIndicator> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
+  late AnimationController _controller; // Animation controller for the dots
   
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    )..repeat();
+      duration: const Duration(milliseconds: 1200), // Duration of the animation
+    )..repeat(); // Repeat the animation
   }
   
   @override
   void dispose() {
-    _controller.dispose();
+    _controller.dispose(); // Dispose the controller when done
     super.dispose();
   }
 
@@ -362,35 +381,36 @@ class _TypingIndicatorState extends State<_TypingIndicator> with SingleTickerPro
         return Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _buildDot(0),
+            _buildDot(0), // First dot
             const SizedBox(width: 4),
-            _buildDot(1),
+            _buildDot(1), // Second dot
             const SizedBox(width: 4),
-            _buildDot(2),
+            _buildDot(2), // Third dot
           ],
         );
       },
     );
   }
   
+  // Build a single dot in the typing indicator
   Widget _buildDot(int index) {
-    final double delay = (index * 0.33).clamp(0.0, 0.5);
-    final double end = (delay + 0.5).clamp(0.0, 1.0);
+    final double delay = (index * 0.33).clamp(0.0, 0.5); // Delay for each dot
+    final double end = (delay + 0.5).clamp(0.0, 1.0); // End of the animation
     final animation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: Interval(delay, end, curve: Curves.easeOut),
+        curve: Interval(delay, end, curve: Curves.easeOut), // Smooth animation
       ),
     );
     
     return Transform.translate(
-      offset: Offset(0, -3 * animation.value),
+      offset: Offset(0, -3 * animation.value), // Move the dot up and down
       child: Container(
         width: 6,
         height: 6,
         decoration: const BoxDecoration(
-          color: primaryColor,
-          shape: BoxShape.circle,
+          color: primaryColor, // Dot color
+          shape: BoxShape.circle, // Dot shape
         ),
       ),
     );

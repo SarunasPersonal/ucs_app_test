@@ -17,9 +17,10 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
   @override
   void initState() {
     super.initState();
-    _loadBookings();
+    _loadBookings(); // Load bookings when the page initializes
   }
 
+  // Load bookings for the current user
   void _loadBookings() {
     if (CurrentUser.userId != null) {
       userBookings = _bookingService.getUserBookings(CurrentUser.userId!);
@@ -28,12 +29,14 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
     }
   }
 
+  // Format a DateTime object into a readable string
   String _formatDateTime(DateTime dateTime) {
     final dateFormat = DateFormat('EEE, MMM d, yyyy');
     final timeFormat = DateFormat('h:mm a');
     return '${dateFormat.format(dateTime)} at ${timeFormat.format(dateTime)}';
   }
 
+  // Get an icon based on the booking location
   IconData _getIconForLocation(String location) {
     switch (location) {
       case 'Taunton': return Icons.school;
@@ -43,6 +46,7 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
     }
   }
 
+  // Show a confirmation dialog and delete a booking if confirmed
   void _deleteBooking(Booking booking) {
     showDialog(
       context: context,
@@ -51,10 +55,12 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
           title: const Text('Cancel Booking'),
           content: const Text('Are you sure you want to cancel this booking?'),
           actions: [
+            // Cancel button
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
               child: const Text('NO', style: TextStyle(color: Colors.grey)),
             ),
+            // Confirm button
             TextButton(
               onPressed: () {
                 _bookingService.deleteBooking(
@@ -63,7 +69,7 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
                   booking.roomType
                 );
                 Navigator.of(context).pop();
-                setState(() => _loadBookings());
+                setState(() => _loadBookings()); // Reload bookings after deletion
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Booking cancelled successfully'),
@@ -87,7 +93,7 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: primaryColor),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pop(context), // Navigate back
         ),
         title: const Text(
           'My Bookings',
@@ -97,19 +103,20 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: userBookings.isEmpty
-            ? _buildEmptyState()
-            : _buildBookingsList(),
+            ? _buildEmptyState() // Show empty state if no bookings
+            : _buildBookingsList(), // Show bookings list otherwise
       ),
       floatingActionButton: userBookings.isNotEmpty
           ? FloatingActionButton(
               backgroundColor: primaryColor,
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(context), // Navigate back
               child: const Icon(Icons.add, color: secondaryColor),
             )
           : null,
     );
   }
 
+  // Build the UI for the empty state
   Widget _buildEmptyState() {
     return Center(
       child: Column(
@@ -143,7 +150,7 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
               backgroundColor: primaryColor,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             ),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(context), // Navigate back
             child: const Text(
               'Book Now',
               style: TextStyle(color: secondaryColor),
@@ -154,13 +161,14 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
     );
   }
 
+  // Build the list of bookings
   Widget _buildBookingsList() {
     return ListView.builder(
       itemCount: userBookings.length,
       itemBuilder: (context, index) {
         final booking = userBookings[index];
         final formattedDateTime = _formatDateTime(booking.dateTime);
-        final isUpcoming = booking.dateTime.isAfter(DateTime.now());
+        final isUpcoming = booking.dateTime.isAfter(DateTime.now()); // Check if the booking is upcoming
         
         return Card(
           margin: const EdgeInsets.only(bottom: 16),
@@ -179,13 +187,13 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
               children: [
                 Row(
                   children: [
-                    _buildLocationIcon(booking.location, isUpcoming),
+                    _buildLocationIcon(booking.location, isUpcoming), // Location icon
                     const SizedBox(width: 16),
-                    _buildBookingDetails(booking, formattedDateTime, isUpcoming),
+                    _buildBookingDetails(booking, formattedDateTime, isUpcoming), // Booking details
                     if (isUpcoming)
                       IconButton(
                         icon: const Icon(Icons.delete_outline, color: Colors.red),
-                        onPressed: () => _deleteBooking(booking),
+                        onPressed: () => _deleteBooking(booking), // Delete booking
                       ),
                   ],
                 ),
@@ -195,7 +203,7 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
                   _buildFeaturesList(booking.features, isUpcoming),
                 
                 const SizedBox(height: 16),
-                _buildStatusBanner(isUpcoming),
+                _buildStatusBanner(isUpcoming), // Status banner
               ],
             ),
           ),
@@ -204,6 +212,7 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
     );
   }
 
+  // Build the location icon widget
   Widget _buildLocationIcon(String location, bool isUpcoming) {
     return Container(
       padding: const EdgeInsets.all(10),
@@ -221,6 +230,7 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
     );
   }
 
+  // Build the booking details widget
   Widget _buildBookingDetails(Booking booking, String formattedDateTime, bool isUpcoming) {
     return Expanded(
       child: Column(
@@ -265,6 +275,7 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
     );
   }
 
+  // Build the list of room features
   Widget _buildFeaturesList(List<RoomFeature> features, bool isUpcoming) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -307,6 +318,7 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
     );
   }
 
+  // Build the status banner widget
   Widget _buildStatusBanner(bool isUpcoming) {
     return Container(
       width: double.infinity,

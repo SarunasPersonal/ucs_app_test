@@ -10,6 +10,7 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        // AppBar with a back button and title
         backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         elevation: 0,
         leading: IconButton(
@@ -29,11 +30,13 @@ class SettingsScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 20),
-                // Dark Mode Toggle
+                
+                // Section: Display Mode
                 _buildSectionTitle('Display Mode'),
                 const SizedBox(height: 10),
                 Card(
                   child: SwitchListTile(
+                    // Toggle for Dark Mode
                     title: Row(
                       children: [
                         Icon(
@@ -61,7 +64,7 @@ class SettingsScreen extends StatelessWidget {
                 
                 const SizedBox(height: 30),
                 
-                // Font Size Options
+                // Section: Text Size
                 _buildSectionTitle('Text Size'),
                 const SizedBox(height: 10),
                 Card(
@@ -70,6 +73,7 @@ class SettingsScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Instructions for adjusting text size
                         Text(
                           'Adjust the text size below:',
                           style: Theme.of(context).textTheme.bodyMedium,
@@ -81,6 +85,7 @@ class SettingsScreen extends StatelessWidget {
                             const Text('A', style: TextStyle(fontSize: 14)),
                             Expanded(
                               child: Slider(
+                                // Slider to adjust font size
                                 value: themeProvider.fontSize,
                                 min: 0.8,
                                 max: 1.4,
@@ -95,6 +100,7 @@ class SettingsScreen extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 10),
+                        // Display current font size label
                         Center(
                           child: Container(
                             padding: const EdgeInsets.symmetric(
@@ -112,6 +118,7 @@ class SettingsScreen extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 20),
+                        // Sample text with current font size
                         Text(
                           'Sample text with current size',
                           style: Theme.of(context).textTheme.bodyMedium,
@@ -128,12 +135,13 @@ class SettingsScreen extends StatelessWidget {
                 
                 const SizedBox(height: 30),
                 
-                // Additional Settings
+                // Section: Additional Settings
                 _buildSectionTitle('Additional Settings'),
                 const SizedBox(height: 10),
                 Card(
                   child: Column(
                     children: [
+                      // Toggle for High Contrast
                       SwitchListTile(
                         title: Row(
                           children: [
@@ -148,18 +156,16 @@ class SettingsScreen extends StatelessWidget {
                         subtitle: const Text(
                           'Increases contrast for better visibility'
                         ),
-                        value: themeProvider.isHighContrast, // Initial value - to be replaced with actual state
+                        value: themeProvider.isHighContrast,
                         onChanged: (value) {
-                          // Show coming soon message until fully implemented
                           themeProvider.toggleHighContrast();
                         },
                         activeColor: primaryColor
-                        
-                        
                       ),
                       
                       const Divider(),
                       
+                      // Toggle for Bold Text
                       SwitchListTile(
                         title: Row(
                           children: [
@@ -184,7 +190,7 @@ class SettingsScreen extends StatelessWidget {
                 
                 const Spacer(),
                 
-                // Reset button
+                // Reset to Default Settings Button
                 Center(
                   child: OutlinedButton.icon(
                     icon: const Icon(Icons.refresh, color: primaryColor),
@@ -193,6 +199,7 @@ class SettingsScreen extends StatelessWidget {
                       style: TextStyle(color: primaryColor),
                     ),
                     onPressed: () {
+                      // Reset all settings to default values
                       themeProvider.setFontSize(1.0);
                       if (themeProvider.isDarkMode) {
                         themeProvider.toggleDarkMode();
@@ -218,6 +225,7 @@ class SettingsScreen extends StatelessWidget {
     );
   }
   
+  // Helper method to build section titles
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.only(left: 8.0),
@@ -232,6 +240,7 @@ class SettingsScreen extends StatelessWidget {
     );
   }
   
+  // Helper method to get font size label based on value
   String _getFontSizeLabel(double fontSize) {
     if (fontSize <= 0.8) return 'Small';
     if (fontSize <= 0.9) return 'Medium Small';
